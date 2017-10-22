@@ -8,7 +8,7 @@ output: html_document
 ```{r}
 library(ggplot2)
 library(dplyr)
-profs = read.csv("profs.csv")
+profs = read.csv("profs.csv", stringsAsFactors = F)
 profs = profs %>% select(-X, -X.1)
 ```
 
@@ -17,12 +17,32 @@ head(profs)
 ```
 
 ```{r}
+profs$department[grepl("Biological", profs$department)] = "Biology"
+profs$department[grepl("Business Te", profs$department)] = "Business"
+profs[profs$department == "Science", ]$department = "Physical Sciences"
+profs$department[grepl("Theater|Speech", profs$department)] = "Communication"
+profs[profs$name == "Greco, Joseph", ]$department = "Communication"
+profs[profs$name == "Sokolski, Patricia", ]$department = "Communication"
+profs$department[grepl("Allied", profs$department)] = "Health Science"
+profs$department[grepl("Health & Physical Education|Physical Education", profs$department)] = "Physical Ed"
+profs$department[grepl("Art", profs$department)] = "Art"
+profs$department[grepl("Legal", profs$department)] = "Law"
+profs$department[grepl("African|Ethnic|Women", profs$department)] = "Cultural Studies"
+profs$department[grepl("Foreign|Spanish", profs$department)] = "Languages"
+profs$department[grepl("Info", profs$department)] = "Social Science"
+profs[profs$name == "Townsend, Charles", ]$department = "Social Science"
+profs[profs$name == "Ruiz, Roberto", ]$department = "Philosophy"
+profs$department[grepl("History|Political|Philosophy", profs$department)] = "History, Philosophy, Poly Sci"
+profs = profs %>% mutate(chili = ifelse(grepl("True", chili), "attractive", "not attractive"))
+```
+
+```{r}
 profs["total_tags"] = apply(profs[10:29], 1, sum, na.rm = T)
 ```
 
 ```{r}
 grouped_profs = 
-    profs %>% group_by(name) %>% 
+    profs %>% group_by(name, school, department) %>% 
         summarise_if(is.numeric, mean, na.rm = T) %>% 
         mutate(
            acc.out.class.prop = accessible.outside.class/total_tags * 100,
@@ -53,7 +73,8 @@ grouped_profs[, -(4:24)]
 ```
 
 ```{r}
-merge(profs, grouped_profs[, -(4:24)], by = "name")
+profs = merge(profs, grouped_profs[, -(4:24)], by = c("name", "school"))
+write.csv(profs, "profs_cleaned.csv")
 ```
 
 ```{r}
@@ -61,20 +82,127 @@ profs %>% group_by(school, sex) %>% summarise(mean(overall_score), mean(difficul
 ```
 
 ```{r}
-head(profs)
+all = as.data.frame(table(profs$overall_score, profs$difficulty_score))
+m = profs %>% filter(sex == "male")
+male = as.data.frame(table(m$overall_score, m$difficulty_score))
+all
+female = all - male
+all$Freq[1]
+male$Freq[1]
+female$Freq[1]
 ```
 
 ```{r}
+# z = profs %>% filter(department == c("Mathematics", "Biology", "Physics"))
+
+x = as.data.frame(table(profs$overall_score, profs$difficulty_score))
+x
+table_sum = sum(x[, 3])
+table_sum
 profs %>% # filter(department == "Mathematics") %>%
     ggplot(aes(x = difficulty_score, y = overall_score)) + 
-    geom_point(aes(color = sex), position = "jitter")# + geom_smooth(method = "lm")
-ggplot(profs, aes(x = difficulty_score, y = overall_score)) + geom_bin2d()
-ggplot(profs, aes(x = difficulty_score, y = overall_score)) + geom_raster(aes(fill = department))
+    geom_point(aes(color = chili), position = "jitter") +
+    annotate("text", x = 0.75, y = 1, label = round(female$Freq[1] / all$Freq[1]  * 100, 1), color = "red") +
+    annotate("text", x = 1.25, y = 1, label = round(male$Freq[1]  / all$Freq[1] * 100, 1), color = "blue") +
+    annotate("text", x = 1, y = 2,   label = round(x[3, 3]  / table_sum * 100)) +
+    annotate("text", x = 1, y = 2.5, label = round(x[4, 3]  / table_sum * 100)) +
+    annotate("text", x = 1, y = 3,   label = round(x[5, 3]  / table_sum * 100)) +
+    annotate("text", x = 1, y = 3.5, label = round(x[6, 3]  / table_sum * 100)) +
+    annotate("text", x = 1, y = 4,   label = round(x[7, 3]  / table_sum * 100)) +
+    annotate("text", x = 1, y = 4.5, label = round(x[8, 3]  / table_sum * 100)) +
+    annotate("text", x = 1, y = 5,   label = round(x[9, 3]  / table_sum * 100)) +
+    annotate("text", x = 2, y = 1,   label = round(x[10, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 1.5, label = round(x[11, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 2,   label = round(x[12, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 2.5, label = round(x[13, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 3,   label = round(x[14, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 3.5, label = round(x[15, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 4,   label = round(x[16, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 4.5, label = round(x[17, 3] / table_sum * 100)) +
+    annotate("text", x = 2, y = 5,   label = round(x[18, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 1,   label = round(x[19, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 1.5, label = round(x[20, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 2,   label = round(x[21, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 2.5, label = round(x[22, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 3,   label = round(x[23, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 3.5, label = round(x[24, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 4,   label = round(x[25, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 4.5, label = round(x[26, 3] / table_sum * 100)) +
+    annotate("text", x = 3, y = 5,   label = round(x[27, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 1,   label = round(x[28, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 1.5, label = round(x[29, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 2,   label = round(x[30, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 2.5, label = round(x[31, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 3,   label = round(x[32, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 3.5, label = round(x[33, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 4,   label = round(x[34, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 4.5, label = round(x[35, 3] / table_sum * 100)) +
+    annotate("text", x = 4, y = 5,   label = round(x[36, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 1,   label = round(x[37, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 1.5, label = round(x[38, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 2,   label = round(x[39, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 2.5, label = round(x[40, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 3,   label = round(x[41, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 3.5, label = round(x[42, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 4,   label = round(x[43, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 4.5, label = round(x[44, 3] / table_sum * 100)) +
+    annotate("text", x = 5, y = 5,   label = round(x[45, 3] / table_sum * 100))
+
+# + geom_smooth(method = "lm")
+#ggplot(profs, aes(x = difficulty_score, y = overall_score)) + geom_bin2d(position = "jitter")
+
+
+x = as.data.frame(table(profs$overall_score, profs$difficulty_score, profs$sex))
+x
+# ggplot(profs, aes(x = difficulty_score, y = overall_score)) + geom_raster(aes(fill = sex))
+ggplot(all, aes(x = Var2, y = Var1)) + geom_tile(aes(fill = Freq)) + 
+    annotate("text", x = 0.75, y = 1, label = round(female$Freq[1] / all$Freq[1]  * 100, 1), color = "red") +
+    annotate("text", x = 1.25, y = 1, label = round(male$Freq[1]  / all$Freq[1] * 100, 1), color = "white") +
+    annotate("text", x = 0.75, y = 2, label = round(female$Freq[2] / all$Freq[2]  * 100, 1), color = "red") +
+    annotate("text", x = 1.25, y = 2, label = round(male$Freq[2]  / all$Freq[2] * 100, 1), color = "white") +
+    annotate("text", x = 0.75, y = 3, label = round(female$Freq[3] / all$Freq[3]  * 100, 1), color = "red") +
+    annotate("text", x = 1.25, y = 3, label = round(male$Freq[3]  / all$Freq[3] * 100, 1), color = "white") # +
+    # annotate("text", x = 0.75, y = 4, label = round(female$Freq[4] / all$Freq[4]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 4, label = round(male$Freq[4]  / all$Freq[4] * 100, 1), color = "white") +
+    # annotate("text", x = 0.75, y = 5, label = round(female$Freq[5] / all$Freq[5]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 5, label = round(male$Freq[5]  / all$Freq[5] * 100, 1), color = "white") +
+    # annotate("text", x = 0.75, y = 6, label = round(female$Freq[6] / all$Freq[6]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 6, label = round(male$Freq[6]  / all$Freq[6] * 100, 1), color = "white") + 
+    # annotate("text", x = 0.75, y = 1, label = round(female$Freq[1] / all$Freq[1]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 1, label = round(male$Freq[1]  / all$Freq[1] * 100, 1), color = "white") +
+    # annotate("text", x = 0.75, y = 2, label = round(female$Freq[2] / all$Freq[2]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 2, label = round(male$Freq[2]  / all$Freq[2] * 100, 1), color = "white") +
+    # annotate("text", x = 0.75, y = 3, label = round(female$Freq[3] / all$Freq[3]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 3, label = round(male$Freq[3]  / all$Freq[3] * 100, 1), color = "white") +
+    # annotate("text", x = 0.75, y = 4, label = round(female$Freq[4] / all$Freq[4]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 4, label = round(male$Freq[4]  / all$Freq[4] * 100, 1), color = "white") +
+    # annotate("text", x = 0.75, y = 5, label = round(female$Freq[5] / all$Freq[5]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 5, label = round(male$Freq[5]  / all$Freq[5] * 100, 1), color = "white") +
+    # annotate("text", x = 0.75, y = 6, label = round(female$Freq[6] / all$Freq[6]  * 100, 1), color = "red") +
+    # annotate("text", x = 1.25, y = 6, label = round(male$Freq[6]  / all$Freq[6] * 100, 1), color = "white")
+
 ```
 
 ```{r}
-profs %>% filter(department == "Science") %>% summarise(count = n())
-unique(profs$department)
+profs %>% #filter(department == "Mathematics") %>% 
+    ggplot(aes(x = difficulty_score, y = overall_score)) +
+    geom_point(position = "jitter", alpha = 0.03, color = "white") +
+    stat_sum(inherit.aes = F, aes(x = difficulty_score, y = overall_score, 
+                                color = chili, label = paste(round(..prop.. * 100, 1))), 
+           size = 4, geom = "text", position = position_dodge(width = 0.8)) + 
+    scale_color_manual(values = c("red", "orange")) + 
+    theme(panel.background = element_rect(fill = "black"), panel.grid.major = element_blank(),
+          panel.grid.minor.y = element_blank()) +
+    geom_hline(yintercept = 0.75, color = "white") +
+    geom_hline(yintercept = 1.25, color = "white") +
+    geom_hline(yintercept = 1.75, color = "white") +
+    geom_hline(yintercept = 2.25, color = "white") +
+    geom_hline(yintercept = 2.75, color = "white") +
+    geom_hline(yintercept = 3.25, color = "white") +
+    geom_hline(yintercept = 3.75, color = "white") +
+    geom_hline(yintercept = 4.25, color = "white") +
+    geom_hline(yintercept = 4.75, color = "white") +
+    geom_hline(yintercept = 5.25, color = "white")
 ```
 
 ```{r}
@@ -82,80 +210,47 @@ profs %>% filter(department == "Chemistry") %>% group_by(sex) %>% summarise(mean
 ```
 
 ```{r}
-nrow(as.data.frame(table(profs$overall_score, profs$difficulty_score)))
-# chisq.test(profs$overall_score, profs$difficulty_score)
+z = data.frame(x = 1:10, y = 2:11)
+ggplot(z, aes(x = x, y = y)) + geom_point() + for (i in 1:nrow(z)) {
+    annotate("text", x = 0.3, y = 3, label = "hi", color = "black")
+}
+
+d <- expand.grid(x=1:5,y=1:5)
+d$z <- rnorm(nrow(d))
+d$label <- sample("23.5", size = nrow(d), replace = TRUE)
+d$label2 = sample("99.0", size = nrow(d), replace = TRUE)
+d$sex = c("M", "M", "M", "M", "M", "F", "F", "F", "F", "F")
+
+ggplot(d, aes(x,y,fill=z)) + geom_tile() +
+    geom_text(aes(label=label, color = sex), nudge_x = 0.2) +
+    geom_text(aes(label=label2), nudge_x = -.2) +
+    
+d <- expand.grid(x=1:5,y=1:5)
+d$z <- rnorm(nrow(d))
+d$f <- sample("35", size = nrow(d), replace = TRUE)
+d$m <- sample("65", size = nrow(d), replace = TRUE)
+
+d
+dd <- tidyr::gather(d, gender, label, -x,-y,-z)
+dd
+ggplot(dd, aes(x,y,fill=z)) + geom_tile() +
+  geom_text(aes(label=label,colour=gender, hjust = ifelse(gender=="f", 1.5,-0.5))) +
+  scale_colour_manual("gender", values=c("pink","green"))
+        
+    # annotate("text", x = 0.75, y = 1, label = round(female$Freq[1] / all$Freq[1]  * 100, 1), color = "red")
 ```
 
 ```{r}
-profs2 = read.csv("profs_tags.csv", stringsAsFactors = F)
-profs2 = profs2 %>% select(-X)
+head(profs)
+profs %>% group_by(school) %>% filter(department.x == "Mathematics") %>% summarise(mean(difficulty_score, overall_score))
+profs
+
+grouped_profs
+grouped_profs[, -c(1, 4, 5)] 
+%>% group_by(school) %>% dplyr::select(overall_score_mean, difficulty_score_mean)
+    filter(department == "Mathematics") %>% group_by(school, department) %>% summarise(mean(acc.out.class.prop, na.rm = T))
+group
 ```
-
-```{r}
-class(profs2)
-```
-
-```{r}
-x = (profs2 %>% filter(name == "Svoronos, Paris") %>% select(tag_dict))[1, ]
-x
-```
-
-```{r}
-x = gsub('\\{|}', "", x)
-tags_split = strsplit(x, ", ")[[1]]
-tags_split = gsub("'", "", tags_split)
-tags_split = gsub('"', "", tags_split)
-gsub(":", " =", tags_split)
-```
-
-```{r}
-# strsplit(tags_split[1], ": ")[[1]]
-# single_tag
-as.list(c("a" = "54", "b" = "123"))
-```
-
-```{r}
-x
-```
-
-```{r}
-tags_split = strsplit(x, ", ")[[1]]
-tags_split = gsub("'", "", tags_split)
-tags_split = gsub('"', "", tags_split)
-tags_split = strsplit(tags_split, ": ", ",")
-tags_split = unlist(tags_split)
-```
-
-```{r}
-as.list(c("a" = "54", "b" = "123"))
-tags_split[1]
-class(tags_split[2])
-as.list(c(tags_split[1] = tags_split[2]))
-```
-
-```{r}
-new = read.csv("abc.csv")
-new = new %>% select(-X, -X.1)
-```
-
-```{r}
-head(new)
-```
-
-```{r}
-class(NA)
-```
-
-```{r}
-sum(new[, c(11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 30)][1, ], na.rm = T)
-```
-
-
-
-
-
-
-
 
 
 
