@@ -38,33 +38,39 @@ profs = profs %>% mutate(chili = ifelse(grepl("True", chili), "attractive", "not
 
 ```{r}
 profs["total_tags"] = apply(profs[10:29], 1, sum, na.rm = T)
+profs[profs$school == "qns", ]$school = "QNS"
+profs[profs$school == "king", ]$school = "KNG"
+profs[profs$school == "nas", ]$school = "NAS"
+profs[profs$school == "lg", ]$school = "LAG"
+profs[profs$school == "man", ]$school = "MAN"
+
 ```
 
 ```{r}
 grouped_profs = 
-    profs %>% group_by(name, school, sex, department) %>% 
+    profs %>% group_by(name, school, sex, department) %>%
         summarise_if(is.numeric, mean, na.rm = T) %>% 
         mutate(
-           acc.out.class.prop = accessible.outside.class/total_tags * 100,
-           amaz.lect.prop = amazing.lectures/total_tags * 100,
-           pop.quiz.prop = beware.of.pop.quizzes/total_tags * 100,
-           caring.prop = caring/total_tags * 100,
-           grad.crit.prop = clear.grading.criteria/total_tags * 100,
-           ext.cred.prop = extra.credit/total_tags * 100,
-           read.prop = get.ready.to.read/total_tags * 100,
-           feedback.pop = gives.good.feedback/total_tags * 100,
-           few.things.prop = graded.by.few.things/total_tags * 100,
-           group.proj.prop = group.projects/total_tags * 100,
-           hilarious.pop = hilarious/total_tags * 100,
-           inspirational.prop = inspirational/total_tags * 100,
-           lecture.heavy.prop = lecture.heavy/total_tags * 100,
-           homework.prop = lots.of.homework/total_tags * 100,
-           participation.prop = participation.matters/total_tags * 100,
-           respected.prop = respected/total_tags * 100,
-           skip.class.prop = skip.class.you.wont.pass/total_tags * 100,
-           many.papers.prop = so.many.papers/total_tags * 100,
-           test.heavy.prop = test.heavy/total_tags * 100,
-           tough.grader.prop = tough.grader/total_tags * 100)
+           `Accessible Outside of Class` = accessible.outside.class/total_tags * 100,
+           `Amazing Lectures` = amazing.lectures/total_tags * 100,
+           `Beware of Pop Quizzes` = beware.of.pop.quizzes/total_tags * 100,
+           Caring = caring/total_tags * 100,
+           `Clear Grading Criteria` = clear.grading.criteria/total_tags * 100,
+           `Extra Credit` = extra.credit/total_tags * 100,
+           `Get Ready to Read` = get.ready.to.read/total_tags * 100,
+           `Gives Good Feedback` = gives.good.feedback/total_tags * 100,
+           `Graded by Few Things` = graded.by.few.things/total_tags * 100,
+           `Group Projects` = group.projects/total_tags * 100,
+           Hilarious = hilarious/total_tags * 100,
+           Inspirational = inspirational/total_tags * 100,
+           `Lecture Heavy` = lecture.heavy/total_tags * 100,
+           `Lots of Homework` = lots.of.homework/total_tags * 100,
+           `Participation Matters` = participation.matters/total_tags * 100,
+           Respected = respected/total_tags * 100,
+           `Skip Class? You won't Pass` = skip.class.you.wont.pass/total_tags * 100,
+           `So Many Papers` = so.many.papers/total_tags * 100,
+           `Test Heavy` = test.heavy/total_tags * 100,
+           `Tough Grader` = tough.grader/total_tags * 100)
 ```
 
 ```{r}
@@ -74,35 +80,43 @@ grouped_profs[, -(5:27)]
 
 ```{r}
 profs = merge(profs, grouped_profs[, -(5:27)], by = c("name"), suffixes = c("", "_y")) %>% select(-school_y, -sex_y, -department_y)
+profs
 write.csv(profs, "profs_cleaned.csv")
 ```
 
 ```{r}
-df = profs %>% filter(school == "qns", department == "Accounting")
-all = as.data.frame(table(df$overall_score, df$difficulty_score, df$sex))
+df = profs %>% filter(school == "QNS", department == c("Accounting", "Biology", "Business"))
+
+to_merge = as.data.frame(table(df$overall_score, df$difficulty_score, df$sex))
+dummy = data.frame(Var1 = as.factor(rep(c(1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5), 10)), 
+                   Var2 = as.factor(rep(1:5, 18)), 
+                   Var3 = as.factor(c(rep("female", 45), rep("male", 45))))
+
+all = merge(dummy, to_merge, on = c(Var1, Var2, Var3), all.x = T)
+
+all[is.na(all)] = 0
 
 all$prop = 0
 
 names(all) = c("overall_score", "difficulty_score", "sex", "count", "proportion")
+
+all = all %>% arrange(sex)
 
 all[c(1:45), 5] = round(all[1:45, 4] / sum(all[1:45, 4]) * 100, 1)
 all[c(46:90), 5] = round(all[46:90, 4] / sum(all[46:90, 4]) * 100, 1)
 
 ggplot(all, aes(difficulty_score, overall_score, fill = count)) +
     geom_tile() +
-    geom_text(aes(label = proportion, colour = sex, hjust = ifelse(sex == "female", 1.5, -0.5))) +
+    geom_text(aes(label = proportion, color = sex, hjust = ifelse(sex == "female", 1.5, -0.5))) +
     scale_colour_manual("% Sex", values = c("red","green"))
 
-# profs %>% filter(department == "Physics", school == "lg")
-# 
-# unique(profs[school == "lg", "department"])
-# unique(profs[profs$school == "lg", ]$department)
-# profs %>% select(department) %>% unique() %>% arrange(department)
-# 
-# profs %>% filter(school == "qns", department == "Accounting", name == "Villani, Kathleen")
 
-df = profs %>% filter(school == "qns", department == "Biology")
-to_merge = as.data.frame(table(df$overall_score, df$difficulty_score, df$chili))
+
+
+
+
+df = profs %>% filter(school == "qns", department == c("Biology", "Art"))
+to_merge = as.data.frame(table(df$overall_score, df$difficulty_score, df$sex))
 
 # don't know how many chilis and not chilis there are for each cell in the grid
 dummy = data.frame(Var1 = as.factor(rep(c(1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5), 10)), Var2 = as.factor(rep(1:5, 18)))
@@ -131,8 +145,6 @@ ggplot(all, aes(difficulty_score, overall_score, fill = count)) +
                   hjust = ifelse(pepper == "not rating", 0.5, ifelse(pepper == "attractive", 1.5, -0.5)))) +
                       #pepper == "attractive", 1.5, ifelse(pepper == "not attractive", -0.5, 0)))) +
     scale_colour_manual("% chili", values = c("red","green", "black"))
-
-all
 
 ```
 
@@ -182,9 +194,56 @@ ggplot(all, aes(x = Var2, y = Var1)) + geom_tile(aes(fill = Freq)) +
 ```
 
 ```{r}
-profs %>% filter(department == "Physics") %>%
-    ggplot(aes(x = difficulty_score, y = overall_score)) +
-    geom_point(position = "jitter", alpha = 0.03, color = "white") +
+profs %>% filter(chili == "not attractive") %>%
+    ggplot(aes(x = difficulty_score, y = overall_score)) + geom_point(position = "jitter") + 
+    geom_smooth(aes(color = sex), method = "lm", se = F)
+    #geom_smooth(aes(color = chili), method = "lm", se = F)
+    # geom_bar(stat = "identity", position = "stack")
+
+profs %>% filter(sex == "female") %>%
+    ggplot(aes(x = difficulty_score, y = overall_score)) + geom_point(position = "jitter") + 
+    #geom_smooth(aes(color = sex), method = "lm", se = F) +
+    geom_smooth(aes(color = chili), method = "lm", se = F)
+    # geom_bar(stat = "identity", position = "stack")
+
+profs %>% 
+    group_by(difficulty_score_fac) %>% ggplot(aes(x = difficulty_score_fac, y = overall_score)) + geom_violin()
+    summarise(mean_ = mean(overall_score), sd_ = sd(overall_score), count = n()) %>%
+    ggplot(aes(x = difficulty_score_fac, y = mean_)) + geom_violin()
+
+x$error_bar = 1.96*(x$sd_/sqrt(x$count))
+
+
+
+
+x
+
+x %>% 
+    ggplot(aes(x = difficulty_score_fac, y = mean_)) + geom_violin() +
+    # geom_errorbar(aes(ymin = mean_ - error_bar, ymax = mean_ + error_bar), width = 0.25) + 
+    # geom_point() + ylim(c(0, 5))
+
+
+    
+ 
+ geom_bar(stat = "identity", position = "dodge")
+    # +
+    #geom_smooth(inherit.aes = F, aes(x = difficulty_score, y = abc, color = sex), method = "lm", se = F) #+
+    #geom_smooth(inherit.aes = F, aes(x = difficulty_score, y = abc, color = chili), method = "lm")
+
+
+summary(lm(profs$overall_score ~ profs$difficulty_score))
+summary(aov(overall_score ~ difficulty_score * sex, data = profs))
+
+x = profs %>% filter(chili == "not attractive")
+summary(aov(overall_score ~ difficulty_score * sex, data = x))
+
+cor.test(profs$overall_score, profs$difficulty_score)
+# + geom_smooth(method = "lm")
+
+
+
+
     stat_sum(inherit.aes = F, aes(x = difficulty_score, y = overall_score, 
                                 color = sex, label = paste(round(..prop.. * 100, 1))), 
            size = 4, geom = "text", position = position_dodge(width = 0.8)) + 
@@ -203,6 +262,37 @@ profs %>% filter(department == "Physics") %>%
     geom_hline(yintercept = 5.25, color = "white")
 
 
+```
+
+```{r}
+summarySE = function(data = NULL, measurevar, groupvars = NULL, na.rm = FALSE,
+                      conf.interval = .95, .drop = TRUE) {
+    library(plyr)
+
+    length2 = function (x, na.rm = FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else length(x)
+    }
+
+    datac = ddply(data, groupvars, .drop = .drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm = na.rm),
+          mean = mean   (xx[[col]], na.rm = na.rm),
+          sd   = sd     (xx[[col]], na.rm = na.rm)
+        )
+      },
+      measurevar
+    )
+   
+    datac = rename(datac, c("mean" = measurevar))
+
+    datac$se = datac$sd / sqrt(datac$N)  
+
+    ciMult = qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci = datac$se * ciMult
+
+    return(datac)
+}
 ```
 
 ```{r}
@@ -245,34 +335,56 @@ ggplot(xyz, aes(x = school, y = score, fill = rating)) + geom_bar(stat = "identi
 
 ```{r}
 x = grouped_profs[, c(1:4, 28:47)] %>% group_by(school, department) %>% summarise_if(is.numeric, mean, na.rm = T)
-write.csv(z, "tidy_grouped_profs.csv")
+x
+write.csv(x, "grouped_profs.csv")
+grouped_profs
+
+
+profs
 
 x
 class(z)
 
-tidyr::gather(x, props, values, -school, -department) %>% filter(props == "tough.grader.prop", department == "Biology") %>% 
+z = x %>% select(acc.out.class.prop, department, school) %>% 
+    filter(department == "Accounting") %>% 
+    group_by(school) %>% 
+    summarise(abc = mean(acc.out.class.prop, na.rm = T))
+
+z[is.na(z)] = 0
+
+ggplot(z, aes(x = school, y = abc, fill = school)) + geom_bar(stat = "identity")
++ 
+    ggplot(aes(x = school, y = abc, fill = school)) + geom_bar(stat = "identity") 
+
+#+ 
+    scale_x_discrete(limits = c("king", "lg", "man", "nas", "qns"))
+
+x = tidyr::gather(x, props, values, -school, -department) 
+
+print(x)
+
+x %>% filter(props == "Tough Grader", department == "Biology") %>% 
     ggplot(aes(x = props, y = values, fill = school)) +
-    geom_bar(stat = "identity", position = "dodge")
+    geom_bar(stat = "identity", position = "dodge") #+ scale_x_discrete(limits = c("king", "lg", "man", "nas", "qns"))
 
 # grouped_profs %>% filter(school == "king", department == "Biology") %>% summarise(mean(tough.grader.prop))
+
+paste(strsplit("skp?.are.you", split = "\\.")[[1]], collapse = " ")
 ```
 
 ```{r}
-profs %>% filter(department == "Biology") %>% select(content)
-
-content_vec = profs[profs$department == "Biology", "content"]
-
-print(content[1:3])
-
-x = c("hi", "hello", "whatsup")
-
-paste(x, collapse = " ")
-
-content = length(paste(content_vec, collapse = " "))
-
 library(tm)
 library(wordcloud)
 library(memoise)
+
+z = profs %>% filter(department == "Biology") %>% group_by(school) %>% select(school, content)
+man_vec = z[z$school == "MAN", ][[2]]
+lag_vec = z[z$school == "LAG", ][[2]]
+qns_vec = z[z$school == "QNS", ][[2]]
+kng_vec = z[z$school == "KNG", ][[2]]
+nas_vec = z[z$school == "NAS", ][[2]]
+
+content_vec = profs[profs$department == "Biology", "content"]
 
 my_corp = Corpus(VectorSource(content_vec))
 my_corp = tm_map(my_corp, content_transformer(tolower))
@@ -290,11 +402,15 @@ m = as.matrix(myDTM)
 v = sort(rowSums(m), decreasing = T)
 d = data.frame(word = names(v), freq = v)
 
-head(d, 10)
-
-set.seed(1234)
+# set.seed(1234)
 wordcloud(words = d$word, freq = d$freq, scale = c(4, 0.05), min.freq = 10,
           max.words = 100, random.order = F, rot.per = 0.35, colors = brewer.pal(8, "Dark2"))
+
+"hi"
+```
+
+```{r}
+(profs %>% filter(department == "Chemistry") %>% select("content"))[[1]]
 ```
 
 
