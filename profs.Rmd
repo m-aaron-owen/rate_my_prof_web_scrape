@@ -6,6 +6,7 @@ output: html_document
 ---
 
 ```{r}
+## read in the data
 library(ggplot2)
 library(dplyr)
 profs = read.csv("profs.csv", stringsAsFactors = F)
@@ -13,10 +14,12 @@ profs = profs %>% select(-X, -X.1)
 ```
 
 ```{r}
+# check data
 head(profs)
 ```
 
 ```{r}
+# concatenate similar departments
 profs$department[grepl("Biological", profs$department)] = "Biology"
 profs$department[grepl("Business Te", profs$department)] = "Business"
 profs[profs$department == "Science", ]$department = "Physical Sciences"
@@ -37,16 +40,20 @@ profs = profs %>% mutate(chili = ifelse(grepl("True", chili), "attractive", "not
 ```
 
 ```{r}
+# enumerate total tags for each each row
 profs["total_tags"] = apply(profs[10:29], 1, sum, na.rm = T)
-profs[profs$school == "qns", ]$school = "QNS"
-profs[profs$school == "king", ]$school = "KNG"
-profs[profs$school == "nas", ]$school = "NAS"
-profs[profs$school == "lg", ]$school = "LAG"
-profs[profs$school == "man", ]$school = "MAN"
+
+# rename schools
+profs[profs$school == "qns", ]$school = "Queensboro CC"
+profs[profs$school == "king", ]$school = "Kingsboro CC"
+profs[profs$school == "nas", ]$school = "Nassau CC"
+profs[profs$school == "lg", ]$school = "LaGuardia CC"
+profs[profs$school == "man", ]$school = "Borough of Manhattan CC"
 
 ```
 
 ```{r}
+# aggregating tag proportions
 grouped_profs = 
     profs %>% group_by(name, school, sex, department) %>%
         summarise_if(is.numeric, mean, na.rm = T) %>% 
@@ -67,21 +74,25 @@ grouped_profs =
            `Lots of Homework` = lots.of.homework/total_tags * 100,
            `Participation Matters` = participation.matters/total_tags * 100,
            Respected = respected/total_tags * 100,
-           `Skip Class? You won't Pass` = skip.class.you.wont.pass/total_tags * 100,
+           `Skip Class You won't Pass` = skip.class.you.wont.pass/total_tags * 100,
            `So Many Papers` = so.many.papers/total_tags * 100,
            `Test Heavy` = test.heavy/total_tags * 100,
            `Tough Grader` = tough.grader/total_tags * 100)
 ```
 
 ```{r}
+# renaming columns
 grouped_profs = grouped_profs %>% rename(overall_score_mean = overall_score, difficulty_score_mean = difficulty_score)
 grouped_profs[, -(5:27)]
 ```
 
 ```{r}
-profs = merge(profs, grouped_profs[, -(5:27)], by = c("name"), suffixes = c("", "_y")) %>% select(-school_y, -sex_y, -department_y)
-profs
-write.csv(profs, "profs_cleaned.csv")
+# merging newly aggregating columns back to original data
+profs = merge(profs, grouped_profs[, -(5:27)], by = c("name"), suffixes = c("", "_y")) %>% 
+    select(-school_y, -sex_y, -department_y)
+
+# exporting data
+write.csv(profs, "profs_cleaned2.csv")
 ```
 
 ```{r}
@@ -335,8 +346,7 @@ ggplot(xyz, aes(x = school, y = score, fill = rating)) + geom_bar(stat = "identi
 
 ```{r}
 x = grouped_profs[, c(1:4, 28:47)] %>% group_by(school, department) %>% summarise_if(is.numeric, mean, na.rm = T)
-x
-write.csv(x, "grouped_profs.csv")
+write.csv(x, "grouped_profs3.csv")
 grouped_profs
 
 
@@ -345,16 +355,13 @@ profs
 x
 class(z)
 
-z = x %>% select(acc.out.class.prop, department, school) %>% 
+z = x %>% select(Accessible.Outside.of.Class, department, school) %>% 
     filter(department == "Accounting") %>% 
-    group_by(school) %>% 
-    summarise(abc = mean(acc.out.class.prop, na.rm = T))
+    group_by(school) 
 
 z[is.na(z)] = 0
 
-ggplot(z, aes(x = school, y = abc, fill = school)) + geom_bar(stat = "identity")
-+ 
-    ggplot(aes(x = school, y = abc, fill = school)) + geom_bar(stat = "identity") 
+ggplot(z, aes(x = school, y = Accessible.Outside.of.Class, fill = school)) + geom_bar(stat = "identity")
 
 #+ 
     scale_x_discrete(limits = c("king", "lg", "man", "nas", "qns"))
@@ -411,6 +418,13 @@ wordcloud(words = d$word, freq = d$freq, scale = c(4, 0.05), min.freq = 10,
 
 ```{r}
 (profs %>% filter(department == "Chemistry") %>% select("content"))[[1]]
+```
+
+```{r}
+m = data.frame(x = 1:10, y = 1:10)
+ggplot(m, aes(x = x, y = y)) + 
+    annotate("text", x = 5, y = 5, label = "Department Not at College") + 
+    theme_void() + ggtitle("Hi") + theme(plot.title = element_text(hjust = 0.5))
 ```
 
 

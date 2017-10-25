@@ -1,24 +1,35 @@
 
 library(shinydashboard)
 
-dashboardPage(
-    dashboardHeader(),
+### This is used on ever tab of the app ####
+department_list = c("Accounting","Anthropology", "Art", "Behavioral Sciences",
+                    "Biology", "Business", "Chemistry", "Communication",
+                    "Computer Science", "Criminal Justice", "Cultural Studies",
+                    "Early Childhood Education", "Economics", "Education",
+                    "Engineering", "English", "Fashion", "Finance", "Geology",
+                    "Health Science", "History, Philosophy, Poly Sci",
+                    "Languages", "Law", "Management", "Marketing",
+                    "Mathematics", "Music", "Nursing", "Physical Ed",
+                    "Physical Sciences", "Physics", "Psychology", "Social Science",
+                    "Social Work", "Sociology")
+
+
+dashboardPage(skin = "red",
+    dashboardHeader(title = "Scrape My Professors"),
     dashboardSidebar(
         sidebarMenu(id = "sidebarmenu",
-            menuItem("ratings", tabName = "Ratings", icon = icon("dashboard")),
-            menuItem("tags", tabName = "Tags", icon = icon("th")),
-            menuItem("wordcloud", tabName = "Comments", icon = icon("th")),
+            
+                        ### different tabs ###
+            menuItem("Home", tabName = "Home", icon = icon("home")),
+            menuItem("Ratings", tabName = "Ratings", icon = icon("bar-chart")),
+            menuItem("Tags", tabName = "Tags", icon = icon("tags")),
+            menuItem("Wordclouds", tabName = "Comments", icon = icon("comments")),
+            
+            ## panel only to appear when inside the "Ratings" tab ##
             conditionalPanel("input.sidebarmenu == 'Ratings'",
-                             selectInput(inputId = "school",
-                                         label = "School",
-                                         choices = c(`Borough of Manhattan CC` = "MAN",
-                                                     `Queensboro CC` = "QNS",
-                                                     `Kingsboro CC` = "KNG",
-                                                     `Nassau CC` = "NAS",
-                                                     `LaGuardia CC` = "LAG"),
-                                         selected = "MAN"),
                              checkboxGroupInput(inputId = "dep",
-                                                label = "Department",
+                                                label = "Choose Department(s)",
+                                                ### required to be read in as a list and could be fed a variable ###
                                                 choices = list("Accounting","Anthropology", "Art", "Behavioral Sciences",
                                                                "Biology", "Business", "Chemistry", "Communication",
                                                                "Computer Science", "Criminal Justice", "Cultural Studies",
@@ -28,26 +39,20 @@ dashboardPage(
                                                                "Languages", "Law", "Management", "Marketing",
                                                                "Mathematics", "Music", "Nursing", "Physical Ed",
                                                                "Physical Sciences", "Physics", "Psychology", "Social Science",
-                                                               "Social Work", "Sociology")
+                                                               "Social Work", "Sociology"),
+                                                selected = "Accounting"
                                                 )
                              ),
+            
+            ## panel to appear only when inside the "Tags" tab ##
             conditionalPanel("input.sidebarmenu == 'Tags'",
                              selectInput(inputId = "dep_tags",
                                          label = "Department",
-                                         choices = c("Accounting","Anthropology", "Art", "Behavioral Sciences",
-                                                     "Biology", "Business", "Chemistry", "Communication",
-                                                     "Computer Science", "Criminal Justice", "Cultural Studies",
-                                                     "Early Childhood Education", "Economics", "Education",
-                                                     "Engineering", "English", "Fashion", "Finance", "Geology",
-                                                     "Health Science", "History, Philosophy, Poly Sci",
-                                                     "Languages", "Law", "Management", "Marketing",
-                                                     "Mathematics", "Music", "Nursing", "Physical Ed",
-                                                     "Physical Sciences", "Physics", "Psychology", "Social Science",
-                                                     "Social Work", "Sociology"),
+                                         choices = c(department_list),
                                          selected = "Accounting"),
                              selectInput(inputId = "tags",
                                          label = "Select Professor Tags",
-                                         choices = c(`Accesible Outside of Class` = "Accessible.Outside.of.Class",
+                                         choices = c(`Accessible Outside of Class` = "Accessible.Outside.of.Class",
                                                      `Amazing Lectures` = "Amazing.Lectures",
                                                      `Beware of Pop Quizzes` = "Beware.of.Pop.Quizzes",
                                                      Caring = "Caring",
@@ -63,41 +68,15 @@ dashboardPage(
                                                      `Lots of Homework` = "Lots.of.Homework",
                                                      `Participation Matters` = "Participation.Matters",
                                                      Respected = "Respected",
-                                                     `Skip Class? You won't Pass` = "Skip.Class?.You.won't.Pass",
+                                                     `Skip Class? You won't Pass` = "Skip.Class.You.won.t.Pass",
                                                      `So Many Papers` = "So.Many.Papers",
                                                      `Test Heavy` = "Test.Heavy",
                                                      `Tough Grader` = "Tough.Grader"),
-                                         selected = "Accessible.Outsite.of.Class")),
-                                         # choices = c(`Accessible Outside of Class` = "acc.out.class.prop",
-                                         #             `Amazing Lectures` = "amaz.lect.prop",
-                                         #             `Beware of Pop Quizzes` = "pop.quiz.prop",
-                                         #             Caring = "caring.prop",
-                                         #             `Clear Grading Criteria` = "grad.crit.prop",
-                                         #             `Extra Credit` = "ext.cred.prop",
-                                         #             `Get Ready to Read` = "read.prop",
-                                         #             `Gives Good Feedback` = "feedback.prop",
-                                         #             `Graded by Few Things` = "few.things.prop",
-                                         #             `Group Projects` = "group.proj.prop",
-                                         #             Hilarious = "hilarious.prop",
-                                         #             Inspirational = "inspirational.prop",
-                                         #             `Lecture Heavy` = "lecture.heavy.prop",
-                                         #             `Lots of Homework` = "homework.prop",
-                                         #             `Participation Matters` = "participation.prop",
-                                         #             Respected = "respected.prop",
-                                         #             `Skip Class? You won't Pass` = "skip.class.prop",
-                                         #             `So Many Papers` = "many.papers.prop",
-                                         #             `Test Heavy` = "test.heavy.prop",
-                                         #             `Tough Grader` = "tough.grader.prop"),
-                                         # selected = "acc.out.class.prop")),
+                                         selected = "Accessible.Outside.of.Class")
+                             ),
+            
+            ## panel to appear only when inside the "Comments" tab ##
             conditionalPanel("input.sidebarmenu == 'Comments'",
-                             # selectInput(inputId = "school_cloud",
-                             #             label = "School",
-                             #             choices = c(`Borough of Manhattan CC` = "MAN",
-                             #                         `Queensboro CC` = "QNS",
-                             #                         `Kingsboro CC` = "KNG",
-                             #                         `Nassau CC` = "NAS",
-                             #                         `LaGuardia CC` = "LAG"),
-                             #             selected = "man"),
                              selectInput(inputId = "dep_cloud",
                                          label = "Department",
                                          choices = c("Accounting","Anthropology", "Art", "Behavioral Sciences",
@@ -109,94 +88,94 @@ dashboardPage(
                                                      "Languages", "Law", "Management", "Marketing",
                                                      "Mathematics", "Music", "Nursing", "Physical Ed",
                                                      "Physical Sciences", "Physics", "Psychology", "Social Science",
-                                                     "Social Work", "Sociology")))
-            )),
+                                                     "Social Work", "Sociology")
+                                         )
+                             )
+            )
+        ),
     dashboardBody(
+        
+        ## link to customization of styles ##
+        tags$head(
+            tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+        ),
         tabItems(
+            
+            ## output for the "Home" tab ##
+            tabItem(tabName = "Home",
+                    fluidRow(
+                        
+                        ## insert an image ##
+                        box(img(src = "scrape.png"), width = 12, align = "center")
+                        ),
+                    fluidRow(
+                        
+                        ## different tags have different properties as designated in the custom.css file ##
+                        box(tags$p("Choosing a college is hard, but choosing a college AND the right major is even harder.", 
+                                     tags$u(tags$b("Let Scrape My Professor ")), " help you with both!"),
+                            tags$p("--------------------------------------------------------------------", align = "center"),
+                            tags$p(tags$u(tags$b("Scrape My Professor ")), " is an interactive application that allows you to compare the same 
+                                   academic department(s) across multiple institutions of higher learning to help you make 
+                                   the right choice for your education."),
+                            tags$p("Using student-submitted data scraped from", tags$a("RateMyProfessors.com,", href = "http://www.ratemyprofessors.com/"), "you can explore 
+                                   the following for each department between five community colleges with the highest
+                                   enrollment in the New York City area:",
+                                   tags$ul(
+                                       tags$li("differences in quality and difficulty ratings,"),
+                                       tags$li("commonly used descriptive tags, and"),
+                                       tags$li("the most frequently used words in reviews")
+                                   ),
+                            tags$p('Click one of the tabs on the left panel to get started!')
+                            ), width = 12)
+                        )
+                    ),
+            
+            ## output for the "Ratings" tab ##
             tabItem(tabName = "Ratings",
                     fluidRow(
-                        box(plotOutput("tilePlot", width = "100%")),
-                        box(plotOutput("ratingPlot", width = "100%"))
-                    )),
+                        box(tags$p("Students can rate their professors, on a scale from 1 to 5, for both overall quality and level of difficulty. 
+                                   Below are the averages for these ratings across schools."), 
+                            tags$p("Select which department(s) you want to compare from the left panel."), width = 12),
+                        box(plotOutput("ratingPlot"), width = 12),
+                        box(tags$p("Note: not all colleges offer courses in all departments."), width = 12)
+                        )
+                    ),
+            
+            ## output for the "Tags" tab ##
             tabItem(tabName = "Tags",
                     fluidRow(
-                        box(plotOutput("tagsPlot", width = "100%"))
-                    )),
+                        box(tags$p("With each review, students can add up to three (out of 20) descriptive tags to characterize the professor."),
+                            tags$p("The below figure shows the proportion of the selected tag relative to all tags submitted for that 
+                                   department within each college. That is, for the default figure, about 5% of the 
+                                   LaGuardia CC’s accounting department professors were given the tag “Accessible Outside of Class”."), width = 12),
+                        box(plotOutput("tagsPlot"), width = 12),
+                        box(tags$p("Note: an empty column means that particular tag was never given to a professor at that college."), width = 12)
+                        )
+                    ),
+            
+            ## output for the "Comments" tab ##
             tabItem(tabName = "Comments",
                     fluidRow(
-                        box(plotOutput("wordCloud_man")),
-                        box(plotOutput("wordCloud_nas"))
+                        box(tags$p("Students are allowed up to 350 words to write a personal review of their professors."), 
+                            tags$p("Below are wordclouds, characterizations of commonly-used words, for the selected department's reviews. Larger words indicate higher
+                                   frequencies of those words in the reviews."), width = 12),
+                        box(title = "Borough of Manhattan CC", status = "primary", plotOutput("wordCloud_man")
+                            ),
+                        box(title = "Kingsboro CC", status = "primary", plotOutput("wordCloud_kng")
+                            )
                     ),
                     fluidRow(
-                        box(plotOutput("wordCloud_qns")),
-                        box(plotOutput("wordCloud_lag"))
+                        box(title = "LaGuardia CC", status = "primary", plotOutput("wordCloud_lag")
+                            ),
+                        box(title = "Nassau CC", status = "primary", plotOutput("wordCloud_nas")
+                            )
                     ),
                     fluidRow(
-                        box(plotOutput("wordCloud_kng"))
-                    ))
+                        box(title = "Queensboro CC", status = "primary", plotOutput("wordCloud_qns")
+                            )
+                        )
+                    )
             )
     )
 )
-
-# fluidPage(
-#     sidebarLayout(
-#         sidebarPanel(
-#             selectInput(inputId = "school",
-#                         label = "School",
-#                         choices = c(BMCC = "man",
-#                                     QueensboroCC = "qns",
-#                                     KingsboroCC = "king",
-#                                     NassauCC = "nas",
-#                                     LaGuardiaCC = "lg"),
-#                         selected = "man"),
-#             checkboxInput(inputId = "sex",
-#                           label = "Show Gender Proportions",
-#                           value = T),
-#             checkboxGroupInput(inputId = "dep",
-#                                label = "Department",
-#                                choices = list("Accounting","Anthropology", "Art", "Behavioral Sciences",
-#                                               "Biology", "Business", "Chemistry", "Communication",
-#                                               "Computer Science", "Criminal Justice", "Cultural Studies",
-#                                               "Early Childhood Education", "Economics", "Education",
-#                                               "Engineering", "English", "Fashion", "Finance", "Geology",
-#                                               "Health Science", "History, Philosophy, Poly Sci",
-#                                               "Languages", "Law", "Management", "Marketing",
-#                                               "Mathematics", "Music", "Nursing", "Physical Ed",
-#                                               "Physical Sciences", "Physics", "Psychology", "Social Science",
-#                                               "Social Work", "Sociology"),
-#                                selected = "Accounting"),
-#             selectInput(inputId = "tags",
-#                         label = "Select Professor Tags",
-#                         choices = c(`Accessible Outside of Class` = "acc.out.class.prop",
-#                                     `Amazing Lectures` = "amaz.lect.prop",
-#                                     `Beware of Pop Quizzes` = "pop.quiz.prop",
-#                                     Caring = "caring.prop",
-#                                     `Clear Grading Criteria` = "grad.crit.prop",
-#                                     `Extra Credit` = "ext.cred.prop",
-#                                     `Get Ready to Read` = "read.prop",
-#                                     `Gives Good Feedback` = "feedback.prop",
-#                                     `Graded by Few Things` = "few.things.prop",
-#                                     `Group Projects` = "group.proj.prop",
-#                                     Hilarious = "hilarious.prop",
-#                                     Inspirational = "inspirational.prop",
-#                                     `Lecture Heavy` = "lecture.heavy.prop",
-#                                     `Lots of Homework` = "homework.prop",
-#                                     `Participation Matters` = "participation.prop",
-#                                     Respected = "respected.prop",
-#                                     `Skip Class? You won't Pass` = "skip.class.prop",
-#                                     `So Many Papers` = "many.papers.prop",
-#                                     `Test Heavy` = "test.heavy.prop",
-#                                     `Tough Grader` = "tough.grader.prop"),
-#                         selected = "acc.out.class.prop")
-#             ),
-#         mainPanel(
-#             plotOutput("tilePlot"),
-#             plotOutput("ratingPlot"),
-#             plotOutput("tagsPlot"),
-#             plotOutput("wordCloud")
-#             )
-#         )
-# 
-# 
-#     )
 
