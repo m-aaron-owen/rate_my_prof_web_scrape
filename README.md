@@ -2,8 +2,7 @@
 
 See the finished shiny app: https://maaronowen.shinyapps.io/rmp_web_scrape/
 
-selenium scripts --> python scripts used to scrape ratemyprofessors.com using selenium
-
+selenium scripts --> python scripts used to scrape ratemyprofessors.com using selenium\n
 profs.ipynb --> jupyter notebook for cleaning data
 
 profs.Rmd --> R studio markdown file for further cleaning and shiny app prep
