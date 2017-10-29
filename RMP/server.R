@@ -1,26 +1,90 @@
 
-
 function(input, output, session) {
 
 # ===========================
-# Ratings Tab Plot
+# Ratings I Tab Plot
 # ===========================    
     
     output$ratingPlot = renderPlot({
         
-
-        df = profs %>% filter(department == input$dep) %>%
-            group_by(school) %>%
+        df = profs %>% filter(department %in% input$dep) %>% group_by(school) %>%
             summarise(Overall = mean(overall_score), Difficulty = mean(difficulty_score))
-
+        
         ### data for difficulty and overall scores were in 2 different columns
         ### so tidyr::gather places them into a single column
         tidy_df = tidyr::gather(df, survey, Rating, -school)
+        
 
         ggplot(tidy_df, aes(x = school, y = Rating, fill = survey)) + geom_bar(stat = "identity", position = "dodge") + 
             theme(legend.title = element_blank(), axis.title.x = element_blank(), legend.text = element_text(size = 12),
                   axis.text = element_text(size = 12), axis.title.y = element_text(size = 14)) + ylim(c(0, 5)) + 
             scale_fill_manual(values = c("steelblue4", "cyan3")) + ylab("Average Rating")
+        
+    })
+    
+# ===========================
+# Ratings II Tab Plots
+# ===========================
+    
+    output$scatterPlot = renderPlot({
+        
+        if (input$school == "All") {
+            
+            df = profs %>% filter(department %in% input$dep_exp)
+            
+        } else {
+            
+            df = profs %>% filter(school == input$school, department %in% input$dep_exp)
+        }
+        
+        df %>% 
+            ggplot(aes(x = difficulty_score, y = overall_score)) + 
+            geom_point(position = "jitter", color = "white") + 
+            geom_smooth(aes(color = sex), method = "lm", se = F) + 
+            geom_smooth(aes(color = chili), method = "lm", se = F) +
+            ylim(c(0.75, 5.25)) +
+            scale_color_discrete(breaks = c("male", "female", "attractive", "not attractive")) +
+            scale_y_continuous(breaks = seq(0, 5, 0.5)) +
+            geom_hline(yintercept = 0.75, color = "white") +
+            geom_hline(yintercept = 1.25, color = "white") +
+            geom_hline(yintercept = 1.75, color = "white") +
+            geom_hline(yintercept = 2.25, color = "white") +
+            geom_hline(yintercept = 2.75, color = "white") +
+            geom_hline(yintercept = 3.25, color = "white") +
+            geom_hline(yintercept = 3.75, color = "white") +
+            geom_hline(yintercept = 4.25, color = "white") +
+            geom_hline(yintercept = 4.75, color = "white") +
+            geom_hline(yintercept = 5.25, color = "white") +
+            labs(x = "Difficulty Score", y = "Overall Score") +
+            theme(legend.title = element_blank(), panel.background = element_rect(fill = "black"), 
+                  panel.grid.major.x = element_blank(), panel.grid.minor.x = element_line(color = "white"),
+                  panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(),
+                  axis.ticks = element_blank(), axis.title = element_text(size = 14), 
+                  axis.text = element_text(size = 12), legend.text = element_text(size = 12),
+                  legend.position = "top") 
+        
+    })
+    
+    output$barPlot = renderPlot({
+        
+        if (input$school == "All") {
+            
+            df = profs %>% filter(department %in% input$dep_exp)
+            
+        } else {
+            
+            df = profs %>% filter(school == input$school, department %in% input$dep_exp)
+        }
+        
+        df %>%
+            group_by(difficulty_score_fac) %>%
+            summarise(abc = mean(overall_score)) %>%
+            ggplot(aes(x = difficulty_score_fac, y = abc, fill = difficulty_score_fac)) +
+            geom_bar(stat = "identity", show.legend = F) + 
+            labs(x = "Difficulty Score", y = "Mean Overall Score") +
+            ylim(c(0, 5)) +
+            theme(axis.title = element_text(size = 14), axis.text = element_text(size = 12))
+        
     })
 
 # ===========================
@@ -29,19 +93,19 @@ function(input, output, session) {
     
     output$tagsPlot = renderPlot({
         
-        z = grouped_profs %>% select(input$tags, department, school) %>% 
+        df = grouped_profs %>% select(input$tags, department, school) %>% 
             filter(department == input$dep_tags) %>% 
             group_by(school) 
         
-        ggplot(z, aes_string(x = "school", y = input$tags, fill = "school")) + 
+        ggplot(df, aes_string(x = "school", y = input$tags, fill = "school")) + 
             geom_bar(stat = "identity", show.legend = F) +
             labs(title = paste(strsplit(input$tags, split = "\\.")[[1]], collapse = " ")) + 
             theme(axis.title.x = element_blank(), axis.text = element_text(size = 12), plot.title = element_text(hjust = 0.5, size = 16),
                   axis.title.y = element_text(size = 14), panel.border = element_blank()) + 
             ylim(0, 30) +
             ylab("Proportion of All Tags") + scale_fill_brewer(palette = "Dark2")
+        
     })
-    m = data.frame(x = 1:10, y = 1:10)
 
 # ===========================
 # Comments Tab wordclouds
@@ -62,12 +126,13 @@ function(input, output, session) {
             profs %>% 
                 filter(department == input$dep_cloud, school == "Borough of Manhattan CC") %>% 
                 select("content"))[[1]]
-
+        
+        ## not all schools have all departments; this prints an empty plot with text in the center ##
         if (length(content_vec) == 0) {
-
-            ggplot(m, aes(x = x, y = y)) +
-                theme_void() + ggtitle("Department Not at College") + 
-                theme(plot.title = element_text(hjust = 0.5))
+            ggplot() + 
+                ylim(c(1, 5)) +
+                theme_void() +
+                ggplot2::annotate("text", x = 1, y = 4, label = "Department Not at College", size = 7)
             
         } else {
             my_corp = Corpus(VectorSource(content_vec))
@@ -97,9 +162,11 @@ function(input, output, session) {
                 select("content"))[[1]]
         
         if (length(content_vec) == 0) {
-            ggplot(m, aes(x = x, y = y)) +
-                theme_void() + ggtitle("Department Not at College") + 
-                theme(plot.title = element_text(hjust = 0.5))
+            ggplot() + 
+                ylim(c(1, 5)) +
+                theme_void() +
+                ggplot2::annotate("text", x = 1, y = 4, label = "Department Not at College", size = 7)
+            
         } else {
             my_corp = Corpus(VectorSource(content_vec))
             my_corp = tm_map(my_corp, content_transformer(tolower))
@@ -117,7 +184,6 @@ function(input, output, session) {
                       max.words = 100, random.order = F, rot.per = 0.35, colors = brewer.pal(8, "Dark2"))
         }
         
-        
     })
     
     # kingsboro
@@ -130,9 +196,10 @@ function(input, output, session) {
         
         if (length(content_vec) == 0) {
             
-            ggplot(m, aes(x = x, y = y)) +
-                theme_void() + ggtitle("Department Not at College") + 
-                theme(plot.title = element_text(hjust = 0.5))
+            ggplot() + 
+                ylim(c(1, 5)) +
+                theme_void() +
+                ggplot2::annotate("text", x = 1, y = 4, label = "Department Not at College", size = 7)
             
         } else {
             my_corp = Corpus(VectorSource(content_vec))
@@ -163,9 +230,10 @@ function(input, output, session) {
         
         if (length(content_vec) == 0) {
             
-            ggplot(m, aes(x = x, y = y)) +
-                theme_void() + ggtitle("Department Not at College") + 
-                theme(plot.title = element_text(hjust = 0.5))
+            ggplot() + 
+                ylim(c(1, 5)) +
+                theme_void() +
+                ggplot2::annotate("text", x = 1, y = 4, label = "Department Not at College", size = 7)
 
         } else {
         
@@ -196,9 +264,11 @@ function(input, output, session) {
                 select("content"))[[1]]
         
         if (length(content_vec) == 0) {
-            ggplot(m, aes(x = x, y = y)) +
-                theme_void() + ggtitle("Department Not at College") + 
-                theme(plot.title = element_text(hjust = 0.5))
+            ggplot() + 
+                ylim(c(1, 5)) +
+                theme_void() +
+                ggplot2::annotate("text", x = 1, y = 4, label = "Department Not at College", size = 7)
+            
         } else {
             my_corp = Corpus(VectorSource(content_vec))
             my_corp = tm_map(my_corp, content_transformer(tolower))
@@ -215,89 +285,7 @@ function(input, output, session) {
             wordcloud(words = d$word, freq = d$freq, scale = c(4, 0.5), min.freq = 5,
                       max.words = 100, random.order = F, rot.per = 0.35, colors = brewer.pal(8, "Dark2"))
         }
-        
+    
     })
-
+    
 }
-
-#############  To be added in an exploratory tab ############
-# output$tilePlot = renderPlot({
-# 
-#         profs$difficulty_score_fac = as.factor(profs$difficulty_score)
-#         
-#         if (input$school == "All") {
-#             
-#             df = profs %>% filter(department == input$dep)
-#         
-#         } else {
-#             
-#             df = profs %>% filter(department == input$dep, school == input$school)
-#         }
-#         
-#         df %>%
-#             group_by(difficulty_score_fac) %>%
-#             summarise(abc = mean(overall_score)) %>%
-#             ggplot(aes(x = difficulty_score_fac, y = abc)) +
-#             geom_bar(stat = "identity") + xlab("Difficulty Score Rating") +
-#             ylab("Mean Overall Score Rating") + ylim(c(0, 5))
-
-
-#         if (input$sex == F) {
-# 
-#             all = as.data.frame(table(df$overall_score, df$difficulty_score))
-# 
-#             names(all) = c("overall_score", "difficulty_score", "count")
-# 
-#             ggplot(all, aes(difficulty_score, overall_score, fill = count)) +
-#             geom_tile()
-# 
-#         } else {
-
-# to_merge = as.data.frame(table(df$overall_score, df$difficulty_score, df$sex))
-# dummy = data.frame(Var1 = as.factor(rep(c(1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5), 10)),
-#                    Var2 = as.factor(rep(1:5, 18)),
-#                    Var3 = as.factor(c(rep("female", 45), rep("male", 45))))
-# 
-# all = merge(dummy, to_merge, on = c(Var1, Var2, Var3), all.x = T)
-# 
-# all[is.na(all)] = 0
-# 
-# all$prop = 0
-# 
-# names(all) = c("overall_score", "difficulty_score", "sex", "count", "proportion")
-# 
-# all = all %>% arrange(sex)
-# 
-# all[1:45, 5] = round(all[1:45, 4] / sum(all[1:45, 4]) * 100, 1)
-# all[46:90, 5] = round(all[46:90, 4] / sum(all[46:90, 4]) * 100, 1)
-# 
-# ggplot(all, aes(difficulty_score, overall_score, fill = count)) +
-#     geom_tile() +
-#     geom_text(aes(label = proportion, color = sex, hjust = ifelse(sex == "female", 1.5, -0.5))) +
-#     scale_colour_manual("% Sex", values = c("pink","green"))
-
-#else {
-#
-#             to_merge = as.data.frame(table(df$overall_score, df$difficulty_score, df$chili))
-#             dummy = data.frame(Var1 = as.factor(rep(c(1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5), 10)),
-#                                Var2 = as.factor(rep(1:5, 18)),
-#                                Var3 = as.factor(c(rep("attractive", 45), rep("not attractive", 45))))
-#
-#             all = merge(dummy, to_merge, on = c(Var1, Var2, Var3), all.x = T)
-#
-#             all[is.na(all)] = 0
-#
-#             all$prop = 0
-#
-#             all[c(1:45), 5] = round(all[1:45, 4] / sum(all[1:45, 4]) * 100, 1)
-#             all[c(46:90), 5] = round(all[46:90, 4] / sum(all[46:90, 4]) * 100, 1)
-#
-#             names(all) = c("overall_score", "difficulty_score", "pepper", "count", "proportion")
-#
-#             ggplot(all, aes(difficulty_score, overall_score, fill = count)) +
-#                 geom_tile() +
-#                 geom_text(aes(label = proportion, color = pepper, hjust = ifelse(pepper == "attractive", 1.5, -0.5))) +
-#                 scale_colour_manual("% Pepper", values = c("red","green"))
-#         }
-#    })
-

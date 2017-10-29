@@ -1,7 +1,7 @@
 
 library(shinydashboard)
 
-### This is used on ever tab of the app ####
+## list of all departments; used in all tabs of the app ##
 department_list = c("Accounting","Anthropology", "Art", "Behavioral Sciences",
                     "Biology", "Business", "Chemistry", "Communication",
                     "Computer Science", "Criminal Justice", "Cultural Studies",
@@ -19,36 +19,46 @@ dashboardPage(skin = "red",
     dashboardSidebar(
         sidebarMenu(id = "sidebarmenu",
             
-                        ### different tabs ###
+            ### different tabs ###
             menuItem("Home", tabName = "Home", icon = icon("home")),
-            menuItem("Ratings", tabName = "Ratings", icon = icon("bar-chart")),
+            menuItem("Ratings I", tabName = "Ratings_I", icon = icon("bar-chart")),
+            menuItem("Ratings II", tabName = "Ratings_II", icon = icon("line-chart")),
             menuItem("Tags", tabName = "Tags", icon = icon("tags")),
             menuItem("Wordclouds", tabName = "Comments", icon = icon("comments")),
             
-            ## panel only to appear when inside the "Ratings" tab ##
-            conditionalPanel("input.sidebarmenu == 'Ratings'",
-                             checkboxGroupInput(inputId = "dep",
+            ## panel only to appear when inside the "Ratings I" tab ##
+            conditionalPanel("input.sidebarmenu == 'Ratings_I'",
+                            checkboxGroupInput(inputId = "dep",
                                                 label = "Choose Department(s)",
-                                                ### required to be read in as a list and could be fed a variable ###
-                                                choices = list("Accounting","Anthropology", "Art", "Behavioral Sciences",
-                                                               "Biology", "Business", "Chemistry", "Communication",
-                                                               "Computer Science", "Criminal Justice", "Cultural Studies",
-                                                               "Early Childhood Education", "Economics", "Education",
-                                                               "Engineering", "English", "Fashion", "Finance", "Geology",
-                                                               "Health Science", "History, Philosophy, Poly Sci",
-                                                               "Languages", "Law", "Management", "Marketing",
-                                                               "Mathematics", "Music", "Nursing", "Physical Ed",
-                                                               "Physical Sciences", "Physics", "Psychology", "Social Science",
-                                                               "Social Work", "Sociology"),
+                                                choices = department_list,
                                                 selected = "Accounting"
                                                 )
                              ),
+            
+            ## panel only to appear when inside the "Ratings II" tag ##
+            conditionalPanel("input.sidebarmenu == 'Ratings_II'",
+                             selectInput(inputId = "school",
+                                         label = "School",
+                                         choices = c("All",
+                                                     "Borough of Manhattan CC",
+                                                     "LaGuardia CC",
+                                                     "Kingsboro CC",
+                                                     "Nassau CC",
+                                                     "Queensboro CC"),
+                                         selected = "All"
+                             ),
+                             checkboxGroupInput(inputId = "dep_exp",
+                                                label = "Choose Department(s)",
+                                                choices = department_list,
+                                                selected = "Accounting"
+                             )
+            ),
             
             ## panel to appear only when inside the "Tags" tab ##
             conditionalPanel("input.sidebarmenu == 'Tags'",
                              selectInput(inputId = "dep_tags",
                                          label = "Department",
-                                         choices = c(department_list),
+                                         choices = department_list,
                                          selected = "Accounting"),
                              selectInput(inputId = "tags",
                                          label = "Select Professor Tags",
@@ -64,7 +74,7 @@ dashboardPage(skin = "red",
                                                      `Group Projects` = "Group.Projects",
                                                      Hilarious = "Hilarious",
                                                      Inspirational = "Inspirational",
-                                                     `Lecture Heavy` = "Lecture Heavy",
+                                                     `Lecture Heavy` = "Lecture.Heavy",
                                                      `Lots of Homework` = "Lots.of.Homework",
                                                      `Participation Matters` = "Participation.Matters",
                                                      Respected = "Respected",
@@ -79,23 +89,14 @@ dashboardPage(skin = "red",
             conditionalPanel("input.sidebarmenu == 'Comments'",
                              selectInput(inputId = "dep_cloud",
                                          label = "Department",
-                                         choices = c("Accounting","Anthropology", "Art", "Behavioral Sciences",
-                                                     "Biology", "Business", "Chemistry", "Communication",
-                                                     "Computer Science", "Criminal Justice", "Cultural Studies",
-                                                     "Early Childhood Education", "Economics", "Education",
-                                                     "Engineering", "English", "Fashion", "Finance", "Geology",
-                                                     "Health Science", "History, Philosophy, Poly Sci",
-                                                     "Languages", "Law", "Management", "Marketing",
-                                                     "Mathematics", "Music", "Nursing", "Physical Ed",
-                                                     "Physical Sciences", "Physics", "Psychology", "Social Science",
-                                                     "Social Work", "Sociology")
-                                         )
+                                         choices = department_list,
+                                         selected = "Accounting")
                              )
             )
         ),
     dashboardBody(
         
-        ## link to customization of styles ##
+        ## custom styles ##
         tags$head(
             tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
         ),
@@ -105,7 +106,7 @@ dashboardPage(skin = "red",
             tabItem(tabName = "Home",
                     fluidRow(
                         
-                        ## insert an image ##
+                        ## insert image ##
                         box(img(src = "scrape.png"), width = 12, align = "center")
                         ),
                     fluidRow(
@@ -117,27 +118,44 @@ dashboardPage(skin = "red",
                             tags$p(tags$u(tags$b("Scrape My Professor ")), " is an interactive application that allows you to compare the same 
                                    academic department(s) across multiple institutions of higher learning to help you make 
                                    the right choice for your education."),
-                            tags$p("Using student-submitted data scraped from", tags$a("RateMyProfessors.com,", href = "http://www.ratemyprofessors.com/"), "you can explore 
-                                   the following for each department between five community colleges with the highest
-                                   enrollment in the New York City area:",
+                            tags$p("Using student-submitted data scraped from", tags$a("RateMyProfessors.com,", href = "http://www.ratemyprofessors.com/"), 
+                                   "for all departments in the five community colleges with the highest enrollment in 
+                                   the New York City area, you can explore the following:",
                                    tags$ul(
-                                       tags$li("differences in quality and difficulty ratings,"),
-                                       tags$li("commonly used descriptive tags, and"),
-                                       tags$li("the most frequently used words in reviews")
+                                       tags$li("the differences in quality and difficulty ratings,"),
+                                       tags$li("how gender and attractiveness affect ratings,"),
+                                       tags$li("the most commonly used descriptive tags, and"),
+                                       tags$li("the most frequently used words in reviews.")
                                    ),
                             tags$p('Click one of the tabs on the left panel to get started!')
                             ), width = 12)
                         )
                     ),
             
-            ## output for the "Ratings" tab ##
-            tabItem(tabName = "Ratings",
+            ## output for the "Ratings I" tab ##
+            tabItem(tabName = "Ratings_I",
                     fluidRow(
                         box(tags$p("Students can rate their professors, on a scale from 1 to 5, for both overall quality and level of difficulty. 
                                    Below are the averages for these ratings across schools."), 
                             tags$p("Select which department(s) you want to compare from the left panel."), width = 12),
                         box(plotOutput("ratingPlot"), width = 12),
                         box(tags$p("Note: not all colleges offer courses in all departments."), width = 12)
+                        )
+                    ),
+            
+            ## output for the "Ratings II" tab ##
+            tabItem(tabName = "Ratings_II",
+                    fluidRow(
+                        box(tags$p("The figures below demonstrate the relationship between difficulty score and overall score for professors in
+                                   the selected departments."),
+                            tags$p("Not surprisingly, difficult professors are rated as lower quality. What is surprising, however, is
+                                   how the gender and attractiveness of professors influence this relationship."), width = 12)
+                            ),
+                    fluidRow(
+                        box(plotOutput("scatterPlot"), width = 12)
+                    ),
+                    fluidRow(
+                        box(plotOutput("barPlot"), width = 12)
                         )
                     ),
             
@@ -157,8 +175,8 @@ dashboardPage(skin = "red",
             tabItem(tabName = "Comments",
                     fluidRow(
                         box(tags$p("Students are allowed up to 350 words to write a personal review of their professors."), 
-                            tags$p("Below are wordclouds, characterizations of commonly-used words, for the selected department's reviews. Larger words indicate higher
-                                   frequencies of those words in the reviews."), width = 12),
+                            tags$p("Below are wordclouds, characterizations of commonly-used words, for the selected department's reviews. Larger text indicates higher
+                                   frequencies of words in reviews."), width = 12),
                         box(title = "Borough of Manhattan CC", status = "primary", plotOutput("wordCloud_man")
                             ),
                         box(title = "Kingsboro CC", status = "primary", plotOutput("wordCloud_kng")
